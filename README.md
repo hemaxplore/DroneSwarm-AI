@@ -4,11 +4,6 @@ An intelligent drone swarm system that enables multiple drones to coordinate aut
 
 <p align="center"> <img width="70%" height="60%" src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2R1aDZ4cDh5MWNvNjluczJzYTdybWE5eDc3ODZmNjAxbm0zN2Z5aCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/YWUvOugDNUBS0MTqkv/200w.webp"/> </p>
 
-# 🌐 Live Demo
-
-*🔗 Project Demo* (Simulation / Dashboard):
-👉 (Add your deployed link here if available)
-
 # 🎥 Demo Video
 
 [▶ https://drive.google.com/file/d/1CZjz33rTu8I5O9ig3M3WM_FpOsZKrbBg/view?usp=sharing]
