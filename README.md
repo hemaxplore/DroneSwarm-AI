@@ -79,6 +79,34 @@ An intelligent drone swarm system that enables multiple drones to coordinate aut
 
 - OpenCV for image processing
 
+## ▶️ How to Run the Project
+
+Follow the steps below to set up and run the **Multi-Agent Reinforcement Learning based Drone Swarm System** locally.
+
+ **🔹 1. Clone the Repository**
+```bash
+git clone https://github.com/your-username/autonomous-drone-swarm-marl.git
+cd autonomous-drone-swarm-marl
+
+ **🔹 2. Create Virtual Environment**
+python -m venv venv
+venv\Scripts\activate   # For Windows
+
+ **🔹 3. Install Dependencies**
+pip install flask
+pip install opencv-python
+pip install numpy
+pip install torch
+pip install stable-baselines3 gymnasium
+
+ **🔹 4. Run Application**
+python app.py
+
+ **🔹 5. Open in Browser**
+http://127.0.0.1:5000/
+
+-----
+
 # 📞 Contact
 
 For queries, collaborations, or feedback:
