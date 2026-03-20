@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <title>Multi-Drone Fire Monitoring System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        /* Fire Background Animation */
+        .fire-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #ff0000, #ff6b00, #ff0000, #ff6b00);
+            background-size: 400% 400%;
+            animation: fireAnimation 15s ease infinite;
+            opacity: 0.1;
+            z-index: -2;
+        }
+        
+        @keyframes fireAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Fire Particles */
+        .fire-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .fire-particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: radial-gradient(circle, #ff6b00, transparent);
+            border-radius: 50%;
+            animation: floatUp 8s infinite linear;
+        }
+        
+        @keyframes floatUp {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        /* Header */
+        .header {
+            background: rgba(20, 20, 20, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid rgba(255, 107, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo i {
+            font-size: 32px;
+            color: #ff6b00;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            background: linear-gradient(135deg, #ff6b00, #ff0000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 107, 0, 0.3);
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background: #00ff00;
+            border-radius: 50%;
+            animation: statusBlink 2s infinite;
+        }
+        
+        .status-dot.alert {
+            background: #ff0000;
+            animation: alertBlink 0.5s infinite;
+        }
+        
+        @keyframes statusBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        @keyframes alertBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .logout-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #ff6b00, #ff0000);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 0, 0.4);
+        }
+        
+        /* Fleet Control Bar */
+        .fleet-control {
+            background: rgba(30, 30, 30, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 107, 0, 0.2);
+        }
+        
+        .drone-selector {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .drone-tab {
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            border-radius: 8px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .drone-tab.active {
+            background: rgba(255, 107, 0, 0.2);
+            border-color: #ff6b00;
+            color: #ff6b00;
+        }
+        
+        .drone-tab:hover {
+            transform: translateY(-2px);
+        }
+        
+        .drone-tab i {
+            font-size: 14px;
+        }
+        
+        .fleet-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .fleet-btn {
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            border-radius: 8px;
+            color: #ff6b00;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .fleet-btn:hover {
+            background: rgba(255, 107, 0, 0.2);
+        }
+        
+        /* Main Dashboard */
+        .dashboard {
+            padding: 30px;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        /* 3D City Container */
+        .city-container {
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid rgba(255, 107, 0, 0.2);
+            position: relative;
+            height: 600px;
+            perspective: 1500px;
+            overflow: hidden;
+        }
+        
+        .city-scene {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(25deg) rotateY(-15deg);
+            transition: transform 0.3s ease;
+            cursor: grab;
+        }
+        
+        .city-scene:active {
+            cursor: grabbing;
+        }
+        
+        /* Ground Grid */
+        .ground {
+            position: absolute;
+            width: 800px;
+            height: 800px;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) rotateX(90deg) translateZ(-200px);
+            background: 
+                linear-gradient(rgba(255, 107, 0, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 107, 0, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            border: 2px solid rgba(255, 107, 0, 0.2);
+        }
+        
+        /* 3D Buildings */
+        .building {
+            position: absolute;
+            transform-style: preserve-3d;
+            transition: all 0.3s ease;
+        }
+        
+        .building-face {
+            position: absolute;
+            background: linear-gradient(180deg, #2a2a2a, #1a1a1a);
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            opacity: 0.9;
+        }
+        
+        .building-face.front { transform: translateZ(50px); }
+        .building-face.back { transform: translateZ(-50px) rotateY(180deg); }
+        .building-face.left { transform: rotateY(-90deg) translateZ(50px); }
+        .building-face.right { transform: rotateY(90deg) translateZ(50px); }
+        .building-face.top { 
+            transform: rotateX(90deg) translateZ(50px); 
+            background: linear-gradient(180deg, #3a3a3a, #2a2a2a);
+        }
+        .building-face.bottom { 
+            transform: rotateX(-90deg) translateZ(50px); 
+            background: #1a1a1a;
+        }
+        
+        /* Building 1 - Tall */
+        .building1 {
+            width: 100px;
+            height: 300px;
+            left: 200px;
+            top: 200px;
+            transform: translateZ(150px);
+        }
+        
+        .building1 .building-face {
+            width: 100px;
+            height: 300px;
+        }
+        
+        .building1 .building-face.top,
+        .building1 .building-face.bottom {
+            width: 100px;
+            height: 100px;
+        }
+        
+        /* Building 2 - Medium */
+        .building2 {
+            width: 120px;
+            height: 200px;
+            left: 350px;
+            top: 250px;
+            transform: translateZ(100px);
+        }
+        
+        .building2 .building-face {
+            width: 120px;
+            height: 200px;
+        }
+        
+        .building2 .building-face.top,
+        .building2 .building-face.bottom {
+            width: 120px;
+            height: 120px;
+        }
+        
+        /* Building 3 - Short */
+        .building3 {
+            width: 80px;
+            height: 150px;
+            left: 500px;
+            top: 300px;
+            transform: translateZ(75px);
+        }
+        
+        .building3 .building-face {
+            width: 80px;
+            height: 150px;
+        }
+        
+        .building3 .building-face.top,
+        .building3 .building-face.bottom {
+            width: 80px;
+            height: 80px;
+        }
+        
+        /* Building 4 - Wide */
+        .building4 {
+            width: 150px;
+            height: 180px;
+            left: 150px;
+            top: 350px;
+            transform: translateZ(90px);
+        }
+        
+        .building4 .building-face {
+            width: 150px;
+            height: 180px;
+        }
+        
+        .building4 .building-face.top,
+        .building4 .building-face.bottom {
+            width: 150px;
+            height: 150px;
+        }
+        
+        /* Building 5 - Tower */
+        .building5 {
+            width: 60px;
+            height: 350px;
+            left: 400px;
+            top: 150px;
+            transform: translateZ(175px);
+        }
+        
+        .building5 .building-face {
+            width: 60px;
+            height: 350px;
+        }
+        
+        .building5 .building-face.top,
+        .building5 .building-face.bottom {
+            width: 60px;
+            height: 60px;
+        }
+        
+        /* Fire Effect on Building */
+        .building.on-fire .building-face {
+            animation: fireGlow 2s infinite;
+        }
+        
+        @keyframes fireGlow {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+                background: linear-gradient(180deg, #3a1a1a, #2a0a0a);
+            }
+            50% { 
+                box-shadow: 0 0 40px rgba(255, 107, 0, 0.8);
+                background: linear-gradient(180deg, #4a2a2a, #3a1a1a);
+            }
+        }
+        
+        /* 3D Drones */
+        .drone-3d {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            transform-style: preserve-3d;
+            transition: all 0.5s ease;
+        }
+        
+        .drone-3d.selected {
+            filter: drop-shadow(0 0 20px rgba(255, 107, 0, 0.8));
+        }
+        
+        .drone-3d.drone1 {
+            left: 300px;
+            top: 100px;
+            transform: translateZ(200px);
+            animation: droneFly1 15s infinite ease-in-out;
+        }
+        
+        .drone-3d.drone2 {
+            left: 200px;
+            top: 150px;
+            transform: translateZ(180px);
+            animation: droneFly2 18s infinite ease-in-out;
+        }
+        
+        .drone-3d.drone3 {
+            left: 400px;
+            top: 120px;
+            transform: translateZ(220px);
+            animation: droneFly3 12s infinite ease-in-out;
+        }
+        
+        @keyframes droneFly1 {
+            0% { transform: translateZ(200px) translateX(0) translateY(0); }
+            25% { transform: translateZ(250px) translateX(100px) translateY(-50px); }
+            50% { transform: translateZ(300px) translateX(200px) translateY(0); }
+            75% { transform: translateZ(250px) translateX(100px) translateY(50px); }
+            100% { transform: translateZ(200px) translateX(0) translateY(0); }
+        }
+        
+        @keyframes droneFly2 {
+            0% { transform: translateZ(180px) translateX(0) translateY(0) rotateY(0deg); }
+            33% { transform: translateZ(230px) translateX(-80px) translateY(30px) rotateY(120deg); }
+            66% { transform: translateZ(280px) translateX(80px) translateY(-30px) rotateY(240deg); }
+            100% { transform: translateZ(180px) translateX(0) translateY(0) rotateY(360deg); }
+        }
+        
+        @keyframes droneFly3 {
+            0% { transform: translateZ(220px) translateX(0) translateY(0); }
+            20% { transform: translateZ(270px) translateX(60px) translateY(-40px); }
+            40% { transform: translateZ(320px) translateX(120px) translateY(20px); }
+            60% { transform: translateZ(270px) translateX(60px) translateY(40px); }
+            80% { transform: translateZ(220px) translateX(0) translateY(-20px); }
+            100% { transform: translateZ(220px) translateX(0) translateY(0); }
+        }
+        
+        .drone-frame {
+            position: absolute;
+            width: 60px;
+            height: 10px;
+            background: linear-gradient(90deg, #444, #666);
+            left: 0;
+            top: 25px;
+            border-radius: 5px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .drone-3d.drone1 .drone-frame { background: linear-gradient(90deg, #444, #666); }
+        .drone-3d.drone2 .drone-frame { background: linear-gradient(90deg, #444, #4466ff); }
+        .drone-3d.drone3 .drone-frame { background: linear-gradient(90deg, #444, #44ff66); }
+        
+        .drone-arm {
+            position: absolute;
+            width: 30px;
+            height: 3px;
+            background: #555;
+            transform-origin: center;
+        }
+        
+        .drone-arm:nth-child(2) {
+            left: 0;
+            top: 26px;
+            transform: rotate(-45deg);
+        }
+        
+        .drone-arm:nth-child(3) {
+            right: 0;
+            top: 26px;
+            transform: rotate(45deg);
+        }
+        
+        .drone-arm:nth-child(4) {
+            left: 0;
+            bottom: 26px;
+            transform: rotate(45deg);
+        }
+        
+        .drone-arm:nth-child(5) {
+            right: 0;
+            bottom: 26px;
+            transform: rotate(-45deg);
+        }
+        
+        .drone-motor {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #333;
+            border-radius: 50%;
+        }
+        
+        .drone-motor:nth-child(6) { left: -5px; top: -5px; }
+        .drone-motor:nth-child(7) { right: -5px; top: -5px; }
+        .drone-motor:nth-child(8) { left: -5px; bottom: -5px; }
+        .drone-motor:nth-child(9) { right: -5px; bottom: -5px; }
+        
+        .drone-propeller {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(100, 100, 100, 0.5);
+            border-radius: 50%;
+            animation: spin 0.1s infinite linear;
+        }
+        
+        .drone-propeller:nth-child(10) { left: -10px; top: -10px; }
+        .drone-propeller:nth-child(11) { right: -10px; top: -10px; }
+        .drone-propeller:nth-child(12) { left: -10px; bottom: -10px; }
+        .drone-propeller:nth-child(13) { right: -10px; bottom: -10px; }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .drone-camera {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, #ff6b00, #ff0000);
+            border-radius: 50%;
+            left: 25px;
+            top: 20px;
+            box-shadow: 0 0 10px rgba(255, 107, 0, 0.8);
+            animation: cameraBlink 2s infinite;
+        }
+        
+        .drone-3d.drone2 .drone-camera { background: radial-gradient(circle, #4466ff, #0000ff); }
+        .drone-3d.drone3 .drone-camera { background: radial-gradient(circle, #44ff66, #00ff00); }
+        
+        @keyframes cameraBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Drone Trail */
+        .drone-trail {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 107, 0, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: fadeOut 2s forwards;
+        }
+        
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+        }
+        
+        /* Side Panel */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .panel-card {
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 107, 0, 0.2);
+            transform: translateZ(20px);
+            transition: all 0.3s ease;
+        }
+        
+        .panel-card:hover {
+            transform: translateZ(30px) translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 107, 0, 0.2);
+        }
+        
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #ff6b00;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Fleet Status */
+        .fleet-grid {
+            display: grid;
+            gap: 10px;
+        }
+        
+        .drone-status-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 107, 0, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .drone-status-card.active {
+            background: rgba(255, 107, 0, 0.1);
+            border-color: #ff6b00;
+        }
+        
+        .drone-status-card:hover {
+            transform: translateX(5px);
+        }
+        
+        .drone-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .drone-name {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .drone-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ff00;
+        }
+        
+        .drone-indicator.inactive { background: #888; }
+        .drone-indicator.warning { background: #f59e0b; }
+        .drone-indicator.danger { background: #ef4444; }
+        
+        .drone-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .stat-label { color: #888; }
+        .stat-value { color: #fff; font-weight: 600; }
+        
+        /* Controls */
+        .drone-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .control-btn {
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            border-radius: 8px;
+            color: #ff6b00;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 107, 0, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .control-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .control-btn.center {
+            grid-column: 2;
+        }
+        
+        /* Formation Controls */
+        .formation-controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .formation-btn {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            border-radius: 8px;
+            color: #ff6b00;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .formation-btn:hover {
+            background: rgba(255, 107, 0, 0.2);
+        }
+        
+        /* Fire Alerts */
+        .alert-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .alert-item {
+            background: rgba(255, 0, 0, 0.1);
+            border-left: 3px solid #ff0000;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            animation: slideIn 0.5s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .alert-time {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        /* View Controls */
+        .view-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .view-btn {
+            padding: 8px 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 107, 0, 0.5);
+            border-radius: 5px;
+            color: #ff6b00;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 12px;
+        }
+        
+        .view-btn:hover {
+            background: rgba(255, 107, 0, 0.2);
+        }
+        
+        .view-btn.active {
+            background: rgba(255, 107, 0, 0.3);
+            border-color: #ff6b00;
+        }
+        
+        /* Info Overlay */
+        .info-overlay {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 10;
+        }
+        
+        .info-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .info-row i {
+            color: #ff6b00;
+            width: 15px;
+        }
+        
+        /* Path Visualization */
+        .path-line {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 107, 0, 0.5), transparent);
+            transform-origin: left center;
+            pointer-events: none;
+            animation: pathPulse 2s infinite;
+        }
+        
+        @keyframes pathPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .side-panel {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .fleet-control {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .drone-selector {
+                flex-wrap: wrap;
+            }
+            
+            .city-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="fire-bg"></div>
+    <div class="fire-particles" id="fireParticles"></div>
+    
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-helicopter"></i>
+            <h1>Multi-Drone Fire Monitoring System</h1>
+        </div>
+        <div class="header-controls">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Fleet Active</span>
+            </div>
+            <a href="/logout" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+    </header>
+    
+    <div class="fleet-control">
+        <div class="drone-selector">
+            <div class="drone-tab active" onclick="selectDrone(1)">
+                <i class="fas fa-helicopter"></i>
+                Drone 1
+            </div>
+            <div class="drone-tab" onclick="selectDrone(2)">
+                <i class="fas fa-helicopter"></i>
+                Drone 2
+            </div>
+            <div class="drone-tab" onclick="selectDrone(3)">
+                <i class="fas fa-helicopter"></i>
+                Drone 3
+            </div>
+            <div class="drone-tab" onclick="selectDrone('all')">
+                <i class="fas fa-users"></i>
+                All Drones
+            </div>
+        </div>
+        <div class="fleet-actions">
+            <button class="fleet-btn" onclick="setFormation('line')">
+                <i class="fas fa-minus"></i> Line Formation
+            </button>
+            <button class="fleet-btn" onclick="setFormation('triangle')">
+                <i class="fas fa-play"></i> Triangle
+            </button>
+            <button class="fleet-btn" onclick="setFormation('circle')">
+                <i class="fas fa-circle"></i> Circle
+            </button>
+            <button class="fleet-btn" onclick="emergencyReturn()">
+                <i class="fas fa-home"></i> Return All
+            </button>
+        </div>
+    </div>
+    
+    <main class="dashboard">
+        <div class="city-container">
+            <div class="city-scene" id="cityScene">
+                <div class="ground"></div>
+                
+                <!-- Buildings -->
+                <div class="building building1" id="building1">
+                    <div class="building-face front"></div>
+                    <div class="building-face back"></div>
+                    <div class="building-face left"></div>
+                    <div class="building-face right"></div>
+                    <div class="building-face top"></div>
+                    <div class="building-face bottom"></div>
+                </div>
+                
+                <div class="building building2" id="building2">
+                    <div class="building-face front"></div>
+                    <div class="building-face back"></div>
+                    <div class="building-face left"></div>
+                    <div class="building-face right"></div>
+                    <div class="building-face top"></div>
+                    <div class="building-face bottom"></div>
+                </div>
+                
+                <div class="building building3" id="building3">
+                    <div class="building-face front"></div>
+                    <div class="building-face back"></div>
+                    <div class="building-face left"></div>
+                    <div class="building-face right"></div>
+                    <div class="building-face top"></div>
+                    <div class="building-face bottom"></div>
+                </div>
+                
+                <div class="building building4" id="building4">
+                    <div class="building-face front"></div>
+                    <div class="building-face back"></div>
+                    <div class="building-face left"></div>
+                    <div class="building-face right"></div>
+                    <div class="building-face top"></div>
+                    <div class="building-face bottom"></div>
+                </div>
+                
+                <div class="building building5" id="building5">
+                    <div class="building-face front"></div>
+                    <div class="building-face back"></div>
+                    <div class="building-face left"></div>
+                    <div class="building-face right"></div>
+                    <div class="building-face top"></div>
+                    <div class="building-face bottom"></div>
+                </div>
+                
+                <!-- Drones -->
+                <div class="drone-3d drone1 selected" id="drone1">
+                    <div class="drone-frame"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-camera"></div>
+                </div>
+                
+                <div class="drone-3d drone2" id="drone2">
+                    <div class="drone-frame"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-camera"></div>
+                </div>
+                
+                <div class="drone-3d drone3" id="drone3">
+                    <div class="drone-frame"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-arm"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-motor"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-propeller"></div>
+                    <div class="drone-camera"></div>
+                </div>
+            </div>
+            
+            <div class="view-controls">
+                <button class="view-btn active" onclick="setView('default')">Default</button>
+                <button class="view-btn" onclick="setView('top')">Top View</button>
+                <button class="view-btn" onclick="setView('side')">Side View</button>
+                <button class="view-btn" onclick="setView('drone')">Drone POV</button>
+            </div>
+            
+            <div class="info-overlay">
+                <div class="info-row">
+                    <i class="fas fa-satellite"></i>
+                    <span>GPS: 34.0522°N, 118.2437°W</span>
+                </div>
+                <div class="info-row">
+                    <i class="fas fa-camera"></i>
+                    <span>Cam: Thermal</span>
+                </div>
+                <div class="info-row">
+                    <i class="fas fa-clock"></i>
+                    <span id="currentTime">00:00:00</span>
+                </div>
+                <div class="info-row">
+                    <i class="fas fa-users"></i>
+                    <span>Fleet: 3 Active</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="side-panel">
+            <div class="panel-card">
+                <div class="panel-title">
+                    <i class="fas fa-users"></i>
+                    Fleet Status
+                </div>
+                <div class="fleet-grid">
+                    <div class="drone-status-card active" onclick="selectDrone(1)">
+                        <div class="drone-header">
+                            <div class="drone-name">
+                                <i class="fas fa-helicopter"></i>
+                                Drone 1
+                            </div>
+                            <div class="drone-indicator"></div>
+                        </div>
+                        <div class="drone-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Alt:</span>
+                                <span class="stat-value">150m</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">45km/h</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Battery:</span>
+                                <span class="stat-value">78%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Signal:</span>
+                                <span class="stat-value">Strong</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="drone-status-card" onclick="selectDrone(2)">
+                        <div class="drone-header">
+                            <div class="drone-name">
+                                <i class="fas fa-helicopter"></i>
+                                Drone 2
+                            </div>
+                            <div class="drone-indicator"></div>
+                        </div>
+                        <div class="drone-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Alt:</span>
+                                <span class="stat-value">120m</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">38km/h</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Battery:</span>
+                                <span class="stat-value">65%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Signal:</span>
+                                <span class="stat-value">Good</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="drone-status-card" onclick="selectDrone(3)">
+                        <div class="drone-header">
+                            <div class="drone-name">
+                                <i class="fas fa-helicopter"></i>
+                                Drone 3
+                            </div>
+                            <div class="drone-indicator"></div>
+                        </div>
+                        <div class="drone-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Alt:</span>
+                                <span class="stat-value">180m</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Speed:</span>
+                                <span class="stat-value">52km/h</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Battery:</span>
+                                <span class="stat-value">82%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Signal:</span>
+                                <span class="stat-value">Strong</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- <div class="panel-card">
+                <div class="panel-title">
+                    <i class="fas fa-gamepad"></i>
+                    Drone Controls
+                </div>
+                <div class="drone-controls">
+                    <button class="control-btn" onclick="controlDrone('up')">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                    <button class="control-btn center" onclick="controlDrone('hover')">
+                        <i class="fas fa-pause"></i>
+                    </button>
+                    <button class="control-btn" onclick="controlDrone('down')">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <button class="control-btn" onclick="controlDrone('left')">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="control-btn center" onclick="controlDrone('land')">
+                        <i class="fas fa-plane-arrival"></i>
+                    </button>
+                    <button class="control-btn" onclick="controlDrone('right')">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="formation-controls">
+                    <button class="formation-btn" onclick="patrolMode()">
+                        <i class="fas fa-route"></i> Patrol
+                    </button>
+                    <button class="formation-btn" onclick="investigateMode()">
+                        <i class="fas fa-search"></i> Investigate
+                    </button>
+                    <button class="formation-btn" onclick="surveillanceMode()">
+                        <i class="fas fa-video"></i> Surveillance
+                    </button>
+                    <button class="formation-btn" onclick="emergencyMode()">
+                        <i class="fas fa-exclamation-triangle"></i> Emergency
+                    </button>
+                </div>
+            </div> -->
+            
+            <div class="panel-card">
+                <div class="panel-title">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Fire Alerts
+                </div>
+                <div class="alert-list" id="alertList">
+                    <div class="alert-item">
+                        <div>🔥 High temperature detected - Building 2 (Drone 1)</div>
+                        <div class="alert-time">2 minutes ago</div>
+                    </div>
+                    <div class="alert-item">
+                        <div>🔥 Smoke plume identified - Zone A (Drone 2)</div>
+                        <div class="alert-time">5 minutes ago</div>
+                    </div>
+                    <div class="alert-item">
+                        <div>🔥 Fire hotspot confirmed - Floor 12 (Drone 3)</div>
+                        <div class="alert-time">12 minutes ago</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <script>
+        // Global variables
+        let selectedDrone = 1;
+        let dronePositions = {
+            1: { x: 300, y: 100, z: 200 },
+            2: { x: 200, y: 150, z: 180 },
+            3: { x: 400, y: 120, z: 220 }
+        };
+        let formationMode = 'free';
+        
+        // Create fire particles
+        function createFireParticles() {
+            const container = document.getElementById('fireParticles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'fire-particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 10 + 's';
+                particle.style.animationDuration = (10 + Math.random() * 5) + 's';
+                container.appendChild(particle);
+            }
+        }
+        
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        
+        // Select drone
+        function selectDrone(droneId) {
+            selectedDrone = droneId;
+            
+            // Update UI
+            const tabs = document.querySelectorAll('.drone-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            if (typeof droneId === 'number') {
+                tabs[droneId - 1].classList.add('active');
+            } else {
+                tabs[3].classList.add('active'); // All drones tab
+            }
+            
+            // Update drone selection in scene
+            const drones = document.querySelectorAll('.drone-3d');
+            drones.forEach(drone => drone.classList.remove('selected'));
+            
+            if (droneId !== 'all') {
+                document.getElementById(`drone${droneId}`).classList.add('selected');
+            }
+            
+            // Update status cards
+            const cards = document.querySelectorAll('.drone-status-card');
+            cards.forEach(card => card.classList.remove('active'));
+            if (droneId !== 'all') {
+                cards[droneId - 1].classList.add('active');
+            }
+            
+            showNotification(`Drone ${droneId === 'all' ? 'Fleet' : droneId} selected`);
+        }
+        
+        // Control drone
+        function controlDrone(action) {
+            const drones = selectedDrone === 'all' ? [1, 2, 3] : [selectedDrone];
+            
+            drones.forEach(droneId => {
+                const drone = document.getElementById(`drone${droneId}`);
+                const currentPos = dronePositions[droneId];
+                
+                switch(action) {
+                    case 'up':
+                        currentPos.y -= 20;
+                        currentPos.z += 10;
+                        break;
+                    case 'down':
+                        currentPos.y += 20;
+                        currentPos.z -= 10;
+                        break;
+                    case 'left':
+                        currentPos.x -= 30;
+                        break;
+                    case 'right':
+                        currentPos.x += 30;
+                        break;
+                    case 'hover':
+                        drone.style.animation = 'hover 1s infinite ease-in-out';
+                        setTimeout(() => {
+                            drone.style.animation = `droneFly${droneId} ${15 + droneId * 3}s infinite ease-in-out`;
+                        }, 2000);
+                        break;
+                    case 'land':
+                        currentPos.z = 50;
+                        currentPos.y = 400;
+                        break;
+                }
+                
+                // Apply new position
+                drone.style.transform = `translateZ(${currentPos.z}px) translateX(${currentPos.x}px) translateY(${currentPos.y}px)`;
+                
+                // Create trail effect
+                createDroneTrail(currentPos.x + 400, currentPos.y + 300, droneId);
+            });
+            
+            showNotification(`${selectedDrone === 'all' ? 'All drones' : `Drone ${selectedDrone}`}: ${action} command`);
+        }
+        
+        // Create drone trail
+        function createDroneTrail(x, y, droneId) {
+            const trail = document.createElement('div');
+            trail.className = 'drone-trail';
+            trail.style.left = x + 'px';
+            trail.style.top = y + 'px';
+            
+            const colors = {
+                1: 'rgba(255, 107, 0, 0.6)',
+                2: 'rgba(68, 102, 255, 0.6)',
+                3: 'rgba(68, 255, 102, 0.6)'
+            };
+            trail.style.background = colors[droneId];
+            
+            document.querySelector('.city-scene').appendChild(trail);
+            setTimeout(() => trail.remove(), 2000);
+        }
+        
+        // Set formation
+        function setFormation(type) {
+            formationMode = type;
+            const centerX = 300;
+            const centerY = 250;
+            const centerZ = 200;
+            
+            switch(type) {
+                case 'line':
+                    dronePositions[1] = { x: centerX - 100, y: centerY, z: centerZ };
+                    dronePositions[2] = { x: centerX, y: centerY, z: centerZ };
+                    dronePositions[3] = { x: centerX + 100, y: centerY, z: centerZ };
+                    break;
+                case 'triangle':
+                    dronePositions[1] = { x: centerX, y: centerY - 50, z: centerZ };
+                    dronePositions[2] = { x: centerX - 60, y: centerY + 30, z: centerZ };
+                    dronePositions[3] = { x: centerX + 60, y: centerY + 30, z: centerZ };
+                    break;
+                case 'circle':
+                    for (let i = 1; i <= 3; i++) {
+                        const angle = (i - 1) * (120 * Math.PI / 180);
+                        dronePositions[i] = {
+                            x: centerX + Math.cos(angle) * 80,
+                            y: centerY + Math.sin(angle) * 80,
+                            z: centerZ
+                        };
+                    }
+                    break;
+            }
+            
+            // Apply formation
+            [1, 2, 3].forEach(droneId => {
+                const drone = document.getElementById(`drone${droneId}`);
+                const pos = dronePositions[droneId];
+                drone.style.transform = `translateZ(${pos.z}px) translateX(${pos.x}px) translateY(${pos.y}px)`;
+                drone.style.animation = 'none';
+            });
+            
+            showNotification(`Formation: ${type} activated`);
+        }
+        
+        // Emergency return
+        function emergencyReturn() {
+            [1, 2, 3].forEach(droneId => {
+                const drone = document.getElementById(`drone${droneId}`);
+                dronePositions[droneId] = { x: 300, y: 400, z: 50 };
+                drone.style.transform = `translateZ(50px) translateX(300px) translateY(400px)`;
+            });
+            showNotification('Emergency return activated - All drones returning');
+        }
+        
+        // Patrol mode
+        function patrolMode() {
+            showNotification('Patrol mode activated');
+            [1, 2, 3].forEach(droneId => {
+                const drone = document.getElementById(`drone${droneId}`);
+                drone.style.animation = `droneFly${droneId} ${15 + droneId * 3}s infinite ease-in-out`;
+            });
+        }
+        
+        // Investigate mode
+        function investigateMode() {
+            showNotification('Investigate mode activated - Scanning for hotspots');
+            // Simulate investigation
+            const buildings = document.querySelectorAll('.building');
+            buildings.forEach((building, index) => {
+                setTimeout(() => {
+                    building.classList.add('on-fire');
+                    setTimeout(() => building.classList.remove('on-fire'), 2000);
+                }, index * 1000);
+            });
+        }
+        
+        // Surveillance mode
+        function surveillanceMode() {
+            showNotification('Surveillance mode activated - Continuous monitoring');
+            setFormation('circle');
+        }
+        
+        // Emergency mode
+        function emergencyMode() {
+            showNotification('Emergency mode activated - Maximum coverage');
+            setFormation('triangle');
+            // Speed up animations
+            [1, 2, 3].forEach(droneId => {
+                const drone = document.getElementById(`drone${droneId}`);
+                drone.style.animationDuration = '5s';
+            });
+        }
+        
+        // Set view
+        function setView(view) {
+            const cityScene = document.getElementById('cityScene');
+            const buttons = document.querySelectorAll('.view-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            switch(view) {
+                case 'default':
+                    cityScene.style.transform = 'rotateX(25deg) rotateY(-15deg)';
+                    break;
+                case 'top':
+                    cityScene.style.transform = 'rotateX(90deg) rotateY(0deg)';
+                    break;
+                case 'side':
+                    cityScene.style.transform = 'rotateX(0deg) rotateY(0deg)';
+                    break;
+                case 'drone':
+                    cityScene.style.transform = 'rotateX(20deg) rotateY(-30deg) scale(1.2)';
+                    break;
+            }
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 120px;
+                right: 20px;
+                background: linear-gradient(135deg, rgba(255, 107, 0, 0.95), rgba(255, 0, 0, 0.95));
+                color: white;
+                padding: 15px 25px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+                font-weight: 600;
+                backdrop-filter: blur(10px);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        async function notifyBackendFireAlert(droneId, x, y) {
+            try {
+                const response = await fetch('/fire-alert', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        drone_id: droneId,
+                        x: x,
+                        y: y
+                    })
+                });
+
+                const result = await response.json();
+                if (!result.ok) {
+                    console.log('Email alert not sent:', result.message || 'Unknown reason');
+                }
+            } catch (error) {
+                console.log('Email alert request failed:', error);
+            }
+        }
+        
+        // Simulate fire alerts
+        function addFireAlert() {
+            const alerts = [
+                '🔥 Temperature spike detected - Building 1',
+                '🔥 Smoke plume identified - Building 3',
+                '🔥 Fire perimeter expanding - Building 2',
+                '🔥 Hotspot monitoring active - Building 5',
+                '🔥 Wind direction changing - North',
+                '🔥 Emergency response required - Building 4'
+            ];
+            
+            const alertList = document.getElementById('alertList');
+            const newAlert = document.createElement('div');
+            newAlert.className = 'alert-item';
+            const droneId = Math.floor(Math.random() * 3) + 1;
+            const dronePos = dronePositions[droneId] || { x: 0, y: 0 };
+            newAlert.innerHTML = `
+                <div>${alerts[Math.floor(Math.random() * alerts.length)]} (Drone ${droneId})</div>
+                <div class="alert-time">Just now</div>
+            `;
+            
+            alertList.insertBefore(newAlert, alertList.firstChild);
+            
+            while (alertList.children.length > 5) {
+                alertList.removeChild(alertList.lastChild);
+            }
+
+            notifyBackendFireAlert(droneId, Math.round(dronePos.x), Math.round(dronePos.y));
+            
+            // Randomly set a building on fire
+            const buildings = document.querySelectorAll('.building');
+            const randomBuilding = buildings[Math.floor(Math.random() * buildings.length)];
+            randomBuilding.classList.add('on-fire');
+            
+            setTimeout(() => {
+                randomBuilding.classList.remove('on-fire');
+            }, 5000);
+            
+            // Update status
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            statusDot.classList.add('alert');
+            statusText.textContent = 'Fire Alert Active';
+            
+            setTimeout(() => {
+                statusDot.classList.remove('alert');
+                statusText.textContent = 'Fleet Active';
+            }, 5000);
+        }
+        
+        // Update drone status
+        function updateDroneStatus() {
+            [1, 2, 3].forEach(droneId => {
+                const altitude = (140 + Math.random() * 40).toFixed(0);
+                const speed = (35 + Math.random() * 20).toFixed(0);
+                const battery = (70 - Math.random() * 10).toFixed(0);
+                
+                // Update status cards
+                const cards = document.querySelectorAll('.drone-status-card');
+                const stats = cards[droneId - 1].querySelectorAll('.stat-value');
+                stats[0].textContent = altitude + 'm';
+                stats[1].textContent = speed + 'km/h';
+                stats[2].textContent = battery + '%';
+                
+                // Update indicator color based on battery
+                const indicator = cards[droneId - 1].querySelector('.drone-indicator');
+                if (battery < 30) {
+                    indicator.className = 'drone-indicator danger';
+                } else if (battery < 50) {
+                    indicator.className = 'drone-indicator warning';
+                } else {
+                    indicator.className = 'drone-indicator';
+                }
+            });
+        }
+        
+        // 3D Scene Interaction
+        function init3DScene() {
+            const cityScene = document.getElementById('cityScene');
+            let isDragging = false;
+            let startX, startY;
+            let currentX = -15, currentY = 25;
+            
+            cityScene.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                cityScene.style.cursor = 'grabbing';
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                
+                currentX = Math.max(-45, Math.min(45, currentX + deltaX * 0.2));
+                currentY = Math.max(-30, Math.min(60, currentY - deltaY * 0.2));
+                
+                cityScene.style.transform = `rotateX(${currentY}deg) rotateY(${currentX}deg)`;
+                
+                startX = e.clientX;
+                startY = e.clientY;
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+                cityScene.style.cursor = 'grab';
+            });
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case '1': selectDrone(1); break;
+                case '2': selectDrone(2); break;
+                case '3': selectDrone(3); break;
+                case '0': selectDrone('all'); break;
+                case 'ArrowUp': 
+                case 'w': 
+                    controlDrone('up'); 
+                    break;
+                case 'ArrowDown': 
+                case 's': 
+                    controlDrone('down'); 
+                    break;
+                case 'ArrowLeft': 
+                case 'a': 
+                    controlDrone('left'); 
+                    break;
+                case 'ArrowRight': 
+                case 'd': 
+                    controlDrone('right'); 
+                    break;
+                case ' ': 
+                    controlDrone('hover'); 
+                    e.preventDefault(); 
+                    break;
+                case 'l': 
+                    controlDrone('land'); 
+                    break;
+                case 'p': 
+                    patrolMode(); 
+                    break;
+                case 'e': 
+                    emergencyReturn(); 
+                    break;
+            }
+        });
+        
+        // Initialize
+        createFireParticles();
+        init3DScene();
+        
+        // Update intervals
+        setInterval(updateTime, 1000);
+        setInterval(updateDroneStatus, 2000);
+        setInterval(addFireAlert, 12000);
+        
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideOut {
+                to {
+                    transform: translateX(120%);
+                    opacity: 0;
+                }
+            }
+            
+            @keyframes hover {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
