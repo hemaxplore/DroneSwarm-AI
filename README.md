@@ -35,9 +35,6 @@ An intelligent drone swarm system that enables multiple drones to coordinate aut
 | HTML, CSS, JS     | Flask (Python)       | CNN(Object Detection)| Python (Numpy, Matplotlib) |
                     | Uvicorn + Requests   | MARL (Q-Learning /RL)| Custom Grid Environment               |
 
-# 🧩 System Architecture
-<img width="1536" height="1024" alt="Drone Swarm Architecture Diagram" src="C:\Users\hema\Pictures\Screenshots\Screenshot 2026-03-20 234711.png" />
-
 # ⚙️ Modules
 
 **Simulation Environment** – Creates grid-based environment with obstacles
