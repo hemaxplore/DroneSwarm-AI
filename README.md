@@ -2,7 +2,7 @@
 
 An intelligent drone swarm system that enables multiple drones to coordinate autonomously using Multi-Agent Reinforcement Learning (MARL) and Convolutional Neural Networks (CNN). This project focuses on decentralized decision-making, real-time obstacle detection, and adaptive swarm behavior in dynamic environments.
 
-<p align="center"> <img width="50%" height="50%" src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2R1aDZ4cDh5MWNvNjluczJzYTdybWE5eDc3ODZmNjAxbm0zN2Z5aCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/YWUvOugDNUBS0MTqkv/200w.webp"/> </p>
+<p align="center"> <img width="70%" height="60%" src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExN2R1aDZ4cDh5MWNvNjluczJzYTdybWE5eDc3ODZmNjAxbm0zN2Z5aCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/YWUvOugDNUBS0MTqkv/200w.webp"/> </p>
 
 # 🌐 Live Demo
 
